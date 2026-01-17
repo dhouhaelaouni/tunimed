@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: tunimed_api
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=False
+      - DATABASE_URL=sqlite:///tunimed.db
+    command: python app.py
+    restart: unless-stopped
+
+  # Optional: PostgreSQL database for production
+  # db:
+  #   image: postgres:13
+  #   container_name: tunimed_db
+  #   environment:
+  #     POSTGRES_DB: tunimed
+  #     POSTGRES_USER: tunimed
+  #     POSTGRES_PASSWORD: secure_password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:
