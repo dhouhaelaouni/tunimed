@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from models.user import User, OrthopedicSupply
 from db import db
+from decorators.decorators import role_required, any_role_required
+from utils.enums import UserRole, OrthopedicSupplyCondition
 
 # Create orthopedic supplies blueprint
 blp = Blueprint('orthopedic_supplies', __name__, url_prefix='/api/orthopedic-supplies')
@@ -11,9 +13,8 @@ blp = Blueprint('orthopedic_supplies', __name__, url_prefix='/api/orthopedic-sup
 # ============ HELPER FUNCTIONS ============
 
 def validate_condition(condition):
-    """Validate that condition is one of the allowed values"""
-    valid_conditions = ['NEW', 'VERY_GOOD', 'GOOD']
-    return condition in valid_conditions
+    """Validate that condition is one of the allowed values from Enum"""
+    return OrthopedicSupplyCondition.is_valid(condition)
 
 
 def validate_orthopedic_supply_data(data, for_creation=True):
@@ -26,7 +27,8 @@ def validate_orthopedic_supply_data(data, for_creation=True):
         return False, "Name is required and must be a string", 400
     
     if not data.get('condition') or not validate_condition(data.get('condition')):
-        return False, "Condition is required and must be one of: NEW, VERY_GOOD, GOOD", 400
+        valid_list = ", ".join(OrthopedicSupplyCondition.all_conditions())
+        return False, f"Condition is required and must be one of: {valid_list}", 400
     
     quantity = data.get('quantity')
     if not isinstance(quantity, int) or quantity <= 0:
@@ -49,6 +51,7 @@ def validate_orthopedic_supply_data(data, for_creation=True):
 
 @blp.route('', methods=['POST'])
 @jwt_required()
+@role_required(UserRole.CITIZEN) # ✅ Fixed: Using Enum instead of hardcoded string
 def create_orthopedic_supply():
     """
     Create a new orthopedic supply donation or sale.
@@ -211,8 +214,9 @@ def list_orthopedic_supplies():
         # Apply filters
         if condition:
             if not validate_condition(condition):
+                valid_list = ", ".join(OrthopedicSupplyCondition.all_conditions())
                 return jsonify({
-                    "msg": f"Invalid condition. Must be one of: NEW, VERY_GOOD, GOOD",
+                    "msg": f"Invalid condition. Must be one of: {valid_list}",
                     "code": "invalid_filter"
                 }), 400
             query = query.filter_by(condition=condition)
@@ -248,7 +252,6 @@ def list_orthopedic_supplies():
 def get_orthopedic_supply(supply_id):
     """
     Get details of a specific orthopedic supply.
-    Public access - no authentication required.
     ---
     tags:
       - Orthopedic Supplies
@@ -261,11 +264,6 @@ def get_orthopedic_supply(supply_id):
     responses:
       200:
         description: Orthopedic supply details
-        schema:
-          type: object
-          properties:
-            supply:
-              type: object
       404:
         description: Orthopedic supply not found
     """
@@ -316,8 +314,6 @@ def delete_orthopedic_supply(supply_id):
         description: Only the donor can delete their own supply
       404:
         description: Orthopedic supply not found
-      500:
-        description: Server error
     """
     current_user_id = get_jwt_identity()
     
@@ -337,7 +333,6 @@ def delete_orthopedic_supply(supply_id):
                 "code": "forbidden"
             }), 403
         
-        # Delete the supply
         db.session.delete(supply)
         db.session.commit()
         

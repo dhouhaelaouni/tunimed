@@ -1,4 +1,6 @@
 from flask import Blueprint, jsonify
+from decorators.decorators import role_required, any_role_required
+
 
 # Create info blueprint
 blp = Blueprint('info', __name__, url_prefix='/info')

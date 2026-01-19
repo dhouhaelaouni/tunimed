@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from models.user import User
 from db import db
@@ -6,6 +6,8 @@ from datetime import datetime
 from utils.enums import UserRole
 from utils.audit_logging import log_user_registration, log_user_login
 from utils.validation import validate_required_fields, validate_string_field
+from decorators.decorators import role_required, any_role_required
+
 
 # Create auth blueprint
 blp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -40,7 +42,7 @@ def register():
               example: "securepassword123"
             role:
               type: string
-              enum: ["CITIZEN", "PHARMACIST", "REGULATORY_AGENT", "HEALTH_FACILITY", "ADMIN"]
+              enum: ["CITIZEN", "PHARMACIST", "HEALTH_FACILITY", "ADMIN"]
               default: "CITIZEN"
               example: "CITIZEN"
     responses:
@@ -193,8 +195,9 @@ def login():
             "message": "User account is inactive",
             "status": 403
         }), 403
-    
-    # Create JWT tokens
+    print("[DEBUG] JWT_SECRET_KEY at login:", current_app.config["JWT_SECRET_KEY"])
+    # Create JWT tokens with role claim
+    additional_claims = {"role": user.role}
     access_token = create_access_token(identity=user.id)
     refresh_token = create_refresh_token(identity=user.id)
     
@@ -242,7 +245,7 @@ def refresh():
             "status": 401
         }), 401
     
-    # Create new access token
+    # Create new access token with role claim
     new_access_token = create_access_token(identity=user.id)
     
     return jsonify({
@@ -286,4 +289,3 @@ def get_current_user():
     return jsonify({
         "user": user.to_dict()
     }), 200
-

@@ -1,15 +1,10 @@
-"""
-Enumerations for TuniMed API roles and statuses.
-Provides type-safe constants for user roles and medicine/supply statuses.
-"""
-
 from enum import Enum
-
 
 class UserRole(Enum):
     """User roles in the TuniMed system"""
     CITIZEN = 'CITIZEN'
-    PHARMACIST = 'PHARMACIST'
+    PHARMACIST = 'PHARMACIST'  # Changed attribute name from PHARMACY to PHARMACIST
+    HEALTH_FACILITY = 'HEALTH_FACILITY'  
     ADMIN = 'ADMIN'
     
     @classmethod

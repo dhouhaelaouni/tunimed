@@ -8,13 +8,21 @@ class Config:
     """Application configuration settings"""
     
     # Secret keys for Flask and JWT
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'tunimed_super_secret_key_change_in_production')
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'tunimed_jwt_secret_key_change_in_production')
+    # config/config.py
+    JWT_SECRET_KEY = "tunimed_super_secret"
+    SECRET_KEY = "flask_session_secret"  # optional, for Flask sessions 
+    JWT_ALGORITHM = "HS256"
+
+
     
     # JWT Configuration - Token expiration and refresh settings
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"
+    JWT_ALGORITHM = "HS256"
+    JWT_DECODE_LEEWAY = 0
     
     # Database configuration
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///tunimed.db')
